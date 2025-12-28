@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>American Roulette Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050816;
+            --bg-elevated: #0b1020;
+            --panel: #111827;
+            --accent: #6366f1;
+            --accent-soft: #4f46e5;
+            --accent-strong: #a855f7;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at 0% 0%, #1d1b4c 0, #050816 45%, #020617 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        .main-container {
+            max-width: 100vw;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .main-container { padding: 2rem; }
+        }
+
+        .shell-card {
+            background: radial-gradient(circle at top, #111827 0, #020617 70%);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            box-shadow:
+                0 24px 80px rgba(15, 23, 42, 0.95),
+                0 0 0 1px rgba(15, 23, 42, 0.6);
+        }
+
+        .section-label { letter-spacing: 0.22em; }
+
+        .score-pill {
+            border-radius: 1.25rem;
+            background: radial-gradient(circle at top left, rgba(76, 81, 191, 0.25), rgba(15, 23, 42, 0.95));
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto;
+        }
+
+        .wheel-outline {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background:
+                conic-gradient(
+                    from 0deg,
+                    rgba(148, 163, 184, 0.9),
+                    rgba(79, 70, 229, 0.9),
+                    rgba(148, 163, 184, 0.9),
+                    rgba(129, 140, 248, 0.9),
+                    rgba(148, 163, 184, 0.9)
+                );
+            padding: 8px;
+            box-shadow:
+                0 0 35px rgba(79, 70, 229, 0.55),
+                0 12px 40px rgba(15, 23, 42, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .roulette-wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 30% 0%, rgba(148, 163, 184, 0.35) 0, rgba(15, 23, 42, 1) 55%),
+                radial-gradient(circle at 70% 110%, rgba(79, 70, 229, 0.4) 0, rgba(15, 23, 42, 1) 55%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .roulette-wheel-inner {
+            width: 72%;
+            height: 72%;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle, #020617 0, #020617 35%, #0b1120 100%);
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(0deg);
+            transition: transform 4s cubic-bezier(0.2, 0.7, 0.4, 1);
+        }
+
+        .roulette-center {
+            width: 28%;
+            height: 28%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 20%, #1d4ed8 0, #020617 90%);
+            box-shadow:
+                0 0 12px rgba(59, 130, 246, 0.8),
+                inset 0 0 10px rgba(15, 23, 42, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .roulette-pointer {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 18px solid #facc15;
+            filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.7));
+            z-index: 20;
+        }
+
+        .winning-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-shadow: 0 0 16px rgba(129, 140, 248, 0.8);
+        }
+
+        .pill-input { border-radius: 999px; }
+
+        .bet-button,
+        .number-bet-btn {
+            transition: transform 0.1s, box-shadow 0.15s, background-color 0.2s;
+        }
+
+        .bet-button {
+            border-radius: 999px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .bet-button:active,
+        .number-bet-btn:active { transform: scale(0.96); }
+
+        .bet-button:disabled,
+        .number-bet-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .num-red { background: linear-gradient(135deg, #f97373, #b91c1c); }
+        .num-black { background: linear-gradient(135deg, #020617, #1f2937); }
+        .num-green { background: linear-gradient(135deg, #22c55e, #059669); }
+
+        .bet-active {
+            box-shadow:
+                0 0 0 2px #facc15,
+                0 0 16px rgba(250, 204, 21, 0.75);
+            transform: scale(1.04);
+        }
+
+        .metric-card {
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        .session-stat {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+
+        .ev-positive {
+            color: #22c55e;
+            text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+        }
+
+        .ev-negative {
+            color: #ef4444;
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border: 2px solid rgba(99, 102, 241, 0.5);
+            border-radius: 1rem;
+            max-width: 900px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95);
+        }
+
+        .session-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .session-card:hover {
+            border-color: rgba(99, 102, 241, 0.6);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .layout-btn-active {
+            background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+            border-color: #818cf8 !important;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Session History Modal -->
+    <div id="session-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-indigo-300">📊 Session History</h2>
+                <button onclick="closeSessionHistory()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+            <div id="session-history-list">
+                <p class="text-slate-400 text-center py-8">No sessions saved yet. Complete a session and click "Save Session" to track your progress.</p>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button onclick="closeSessionHistory()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold">Close</button>
+                <button onclick="clearSessionHistory()" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+    <div class="w-full max-w-6xl mx-auto shell-card p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <div class="flex flex-col gap-3 mb-8 text-center">
+            <div class="text-xs sm:text-sm font-semibold text-indigo-400 section-label">
+                GTO SHARK · ROULETTE MODULE
+            </div>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-50 tracking-tight">
+                Simulate Roulette. <span class="text-indigo-400">Quantify Risk.</span>
+            </h1>
+            <p class="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto">
+                Choose your roulette variant, place multiple bets, and track your session EV with mathematical precision.
+            </p>
+
+            <!-- Layout Selector -->
+            <div class="flex flex-col items-center gap-3 mt-4">
+                <div class="text-sm font-semibold text-indigo-300">🎰 Select Roulette Variant</div>
+                <div class="flex justify-center gap-3">
+                    <button onclick="changeLayout('american')" id="layout-american" class="layout-btn-active px-5 py-3 rounded-lg text-white font-semibold text-sm border-2 transition hover:scale-105">
+                        🇺🇸 American (0, 00)
+                    </button>
+                    <button onclick="changeLayout('european')" id="layout-european" class="px-5 py-3 rounded-lg bg-slate-700 text-slate-300 font-semibold text-sm border-2 border-slate-600 hover:bg-slate-600 transition hover:scale-105">
+                        🇪🇺 European (0)
+                    </button>
+                    <button onclick="changeLayout('french')" id="layout-french" class="px-5 py-3 rounded-lg bg-slate-700 text-slate-300 font-semibold text-sm border-2 border-slate-600 hover:bg-slate-600 transition hover:scale-105">
+                        🇫🇷 French (La Partage)
+                    </button>
+                </div>
+                <div class="text-sm font-semibold text-slate-300" id="layout-description">
+                    38 pockets • House Edge: 5.26% • Highest risk
+                </div>
+            </div>
+        </div>
+
+        <!-- Scoreboard and Bankroll -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 px-4 py-4 score-pill border border-slate-700">
+            <div class="flex flex-col items-start">
+                <span class="text-xs uppercase tracking-widest text-slate-400">Bankroll</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xl md:text-2xl font-bold text-slate-50">
+                        $<span id="bankroll">1000.00</span>
+                    </span>
+                    <button onclick="adjustBankroll()" class="text-xs bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded">Edit</button>
+                </div>
+            </div>
+            <div class="flex flex-col items-start">
+                <span class="text-xs uppercase tracking-widest text-slate-400">Total Bet</span>
+                <span class="text-xl md:text-2xl font-bold text-indigo-300">
+                    $<span id="current-bet-display">0.00</span>
+                    <span class="text-xs text-slate-400 block mt-1">
+                        <span id="bet-count">0 bets placed</span>
+                    </span>
+                </span>
+            </div>
+            <div class="flex flex-col items-start">
+                <span class="text-xs uppercase tracking-widest text-slate-400">Winning #</span>
+                <span class="text-xl md:text-2xl font-bold text-yellow-300 font-mono">
+                    <span id="winning-number-display">-</span>
+                </span>
+            </div>
+            <div class="flex flex-col items-start">
+                <span class="text-xs uppercase tracking-widest text-slate-400">Hands</span>
+                <span class="text-xl md:text-2xl font-bold text-slate-50">
+                    <span id="session-hands">0</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Session Tracking Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="session-stat">
+                <div class="text-xs uppercase tracking-wider text-slate-400 mb-1">Session P/L</div>
+                <div class="text-2xl font-bold" id="session-pl">$0.00</div>
+                <div class="text-xs text-slate-400 mt-1" id="session-status">Break Even</div>
+            </div>
+            <div class="session-stat">
+                <div class="text-xs uppercase tracking-wider text-slate-400 mb-1">Expected EV</div>
+                <div class="text-2xl font-bold" id="expected-ev">-$0.00</div>
+                <div class="text-xs text-slate-400 mt-1">Total Expected Loss</div>
+            </div>
+            <div class="session-stat">
+                <div class="text-xs uppercase tracking-wider text-slate-400 mb-1">vs Expected</div>
+                <div class="text-2xl font-bold" id="vs-expected">+0.00%</div>
+                <div class="text-xs text-slate-400 mt-1" id="variance-label">On Track</div>
+            </div>
+            <div class="session-stat">
+                <div class="text-xs uppercase tracking-wider text-slate-400 mb-1">Session Log</div>
+                <button onclick="logSession()" class="text-sm bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold w-full mb-2">
+                    💾 Save Session
+                </button>
+                <button onclick="viewSessionHistory()" class="text-sm bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded font-semibold w-full">
+                    📊 View History
+                </button>
+            </div>
+        </div>
+
+        <!-- Wheel Area -->
+        <div class="text-center mb-8 p-6 bg-slate-900/80 rounded-2xl shadow-lg border border-slate-700">
+            <div class="flex flex-col items-center gap-3 mb-4">
+                <h2 class="text-xl sm:text-2xl font-bold text-indigo-200">
+                    Minimal Roulette Wheel
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-400 max-w-md">
+                    A clean, data-focused wheel visualization aligned with the GTO Shark interface.
+                </p>
+            </div>
+
+            <div class="wheel-wrapper">
+                <div class="roulette-pointer"></div>
+                <div class="wheel-outline">
+                    <div class="roulette-wheel">
+                        <div id="wheel-inner" class="roulette-wheel-inner">
+                            <div class="roulette-center">
+                                <span id="result-text" class="winning-number text-slate-50">
+                                    SPIN
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-message"
+                 class="text-center text-base sm:text-lg font-semibold mt-6 text-yellow-300 min-h-[28px]">
+                Place your bet to begin this spin.
+            </div>
+        </div>
+
+        <!-- Betting Controls -->
+        <div class="bg-slate-900/80 border border-slate-700 p-6 rounded-2xl shadow-inner mb-8">
+            <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between mb-4">
+                <h3 class="text-lg sm:text-xl font-bold text-slate-100 flex items-center gap-2">
+                    Betting Console
+                    <span id="layout-pill" class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/40">
+                        American Layout
+                    </span>
+                </h3>
+                <span class="text-[0.7rem] sm:text-xs text-slate-400">
+                    Set your stake, choose a number or outside bet, then spin the wheel.
+                </span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 mb-5">
+                <input
+                    type="number"
+                    id="bet-amount"
+                    value="10"
+                    min="1"
+                    step="1"
+                    class="flex-grow p-3 pill-input text-base bg-slate-950/70 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-100 placeholder:text-slate-500"
+                    placeholder="Enter bet amount">
+                <button
+                    onclick="setBet(10)"
+                    class="w-full sm:w-auto px-4 py-2 pill-input bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 text-sm font-semibold transition duration-150">
+                    Quick 10
+                </button>
+                <button
+                    onclick="setBet(50)"
+                    class="w-full sm:w-auto px-4 py-2 pill-input bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 text-sm font-semibold transition duration-150">
+                    Quick 50
+                </button>
+            </div>
+
+            <h4 class="text-sm sm:text-lg font-semibold mt-4 mb-2 text-slate-200">
+                Straight Up Numbers <span class="text-slate-400 text-xs font-normal">(35 : 1)</span>
+            </h4>
+            <div id="straight-up-buttons" class="grid grid-cols-9 sm:grid-cols-12 gap-1.5 mb-5"></div>
+
+            <h4 class="text-sm sm:text-lg font-semibold mt-4 mb-2 text-slate-200">
+                Outside Bets <span class="text-slate-400 text-xs font-normal">(1 : 1 or 2 : 1)</span>
+            </h4>
+            <div class="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-6">
+                <button onclick="placeBet('Red')" class="bet-button p-2 text-xs sm:text-sm font-bold num-red text-white hover:opacity-90">Red (1 : 1)</button>
+                <button onclick="placeBet('Black')" class="bet-button p-2 text-xs sm:text-sm font-bold num-black text-white hover:opacity-90">Black (1 : 1)</button>
+                <button onclick="placeBet('Odd')" class="bet-button p-2 text-xs sm:text-sm font-bold bg-slate-700 text-white hover:bg-slate-600">Odd (1 : 1)</button>
+                <button onclick="placeBet('Even')" class="bet-button p-2 text-xs sm:text-sm font-bold bg-slate-700 text-white hover:bg-slate-600">Even (1 : 1)</button>
+                <button onclick="placeBet('FirstDoz', '1-12')" class="bet-button p-2 text-xs sm:text-sm font-bold bg-indigo-500 text-white hover:bg-indigo-400">1st Dozen (2 : 1)</button>
+                <button onclick="placeBet('SecondDoz', '13-24')" class="bet-button p-2 text-xs sm:text-sm font-bold bg-indigo-500 text-white hover:bg-indigo-400">2nd Dozen (2 : 1)</button>
+                <button onclick="placeBet('ThirdDoz', '25-36')" class="bet-button p-2 text-xs sm:text-sm font-bold bg-indigo-500 text-white hover:bg-indigo-400 col-span-2 sm:col-span-1">3rd Dozen (2 : 1)</button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="clear-bet-btn" onclick="clearBet()" class="flex-grow p-3 text-sm font-bold rounded-full bg-slate-700 text-slate-50 hover:bg-slate-600">
+                    Clear Bet
+                </button>
+                <button id="spin-btn" onclick="spinWheel()" class="bet-button flex-grow p-3 text-lg sm:text-xl font-bold rounded-full bg-gradient-to-r from-amber-400 to-amber-300 text-slate-900 hover:from-amber-300 hover:to-amber-200 disabled:opacity-50 transition duration-150 shadow-md">
+                    SPIN
+                </button>
+            </div>
+        </div>
+
+        <!-- Risk Metric Display -->
+        <div class="p-6 bg-slate-900/90 rounded-2xl shadow-xl border border-rose-500/50">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                <h3 class="text-lg sm:text-xl font-bold text-slate-100" id="risk-title">
+                    Risk Management Metrics (American Roulette)
+                </h3>
+                <span class="text-[0.7rem] uppercase tracking-[0.22em] text-rose-300">
+                    House Edge Snapshot
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
+                <div class="metric-card p-3">
+                    <div class="text-xs text-slate-400 mb-1">Inside Bets (e.g., Straight Up) EV</div>
+                    <div id="ev-inside" class="text-lg font-mono text-rose-400">-5.26%</div>
+                </div>
+                <div class="metric-card p-3">
+                    <div class="text-xs text-slate-400 mb-1">Outside Bets (e.g., Red / Black) EV</div>
+                    <div id="ev-outside" class="text-lg font-mono text-rose-400">-5.26%</div>
+                </div>
+                <div class="metric-card p-3">
+                    <div class="text-xs text-slate-400 mb-1" id="worst-label">Worst Bet: Five-Number (0, 00, 1, 2, 3)</div>
+                    <div id="ev-worst" class="text-lg font-mono text-rose-400">-7.89%</div>
+                </div>
+            </div>
+
+            <p class="mt-4 text-xs sm:text-sm text-slate-400 text-center max-w-2xl mx-auto" id="risk-note">
+                The house edge on almost all American Roulette bets is approximately 5.26%. Over many spins,
+                you are expected to lose about 5.26 units for every 100 wagered.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- Core Game State ---
+        let bankroll = 1000.00;
+        let startingBankroll = 1000.00;
+        let betAmount = 0;
+        let activeBets = [];
+        let gameActive = false;
+        let currentLayout = 'american';
+
+        // FIX: track last-selected bet for highlight (prevents ReferenceError)
+        let currentBetType = null;
+        let currentBetValue = null;
+
+        // Session Tracking
+        let sessionHands = 0;
+        let totalWagered = 0;
+        let totalWon = 0;
+        let sessionStartTime = Date.now();
+        let spinHistory = [];
+
+        // Wheel configurations
+        const WHEELS = {
+            american: {
+                numbers: {
+                    '0': 'green', '00': 'green',
+                    '1': 'red', '2': 'black', '3': 'red', '4': 'black', '5': 'red',
+                    '6': 'black', '7': 'red', '8': 'black', '9': 'red', '10': 'black',
+                    '11': 'black', '12': 'red', '13': 'black', '14': 'red', '15': 'black',
+                    '16': 'red', '17': 'black', '18': 'red', '19': 'red', '20': 'black',
+                    '21': 'red', '22': 'black', '23': 'red', '24': 'black', '25': 'red',
+                    '26': 'black', '27': 'red', '28': 'black', '29': 'black', '30': 'red',
+                    '31': 'black', '32': 'red', '33': 'black', '34': 'red', '35': 'black', '36': 'red'
+                },
+                ev: -0.0526,
+                fiveNumberEv: -0.0789,
+                name: 'American',
+                description: '38 pockets • House Edge: 5.26% • Highest risk'
+            },
+            european: {
+                numbers: {
+                    '0': 'green',
+                    '1': 'red', '2': 'black', '3': 'red', '4': 'black', '5': 'red',
+                    '6': 'black', '7': 'red', '8': 'black', '9': 'red', '10': 'black',
+                    '11': 'black', '12': 'red', '13': 'black', '14': 'red', '15': 'black',
+                    '16': 'red', '17': 'black', '18': 'red', '19': 'red', '20': 'black',
+                    '21': 'red', '22': 'black', '23': 'red', '24': 'black', '25': 'red',
+                    '26': 'black', '27': 'red', '28': 'black', '29': 'black', '30': 'red',
+                    '31': 'black', '32': 'red', '33': 'black', '34': 'red', '35': 'black', '36': 'red'
+                },
+                ev: -0.0270,
+                fiveNumberEv: null, // N/A
+                name: 'European',
+                description: '37 pockets • House Edge: 2.70% • Better odds'
+            },
+            french: {
+                numbers: {
+                    '0': 'green',
+                    '1': 'red', '2': 'black', '3': 'red', '4': 'black', '5': 'red',
+                    '6': 'black', '7': 'red', '8': 'black', '9': 'red', '10': 'black',
+                    '11': 'black', '12': 'red', '13': 'black', '14': 'red', '15': 'black',
+                    '16': 'red', '17': 'black', '18': 'red', '19': 'red', '20': 'black',
+                    '21': 'red', '22': 'black', '23': 'red', '24': 'black', '25': 'red',
+                    '26': 'black', '27': 'red', '28': 'black', '29': 'black', '30': 'red',
+                    '31': 'black', '32': 'red', '33': 'black', '34': 'red', '35': 'black', '36': 'red'
+                },
+                ev: -0.0135,
+                fiveNumberEv: null, // N/A
+                name: 'French',
+                description: '37 pockets • House Edge: 1.35% • La Partage rule • Best odds'
+            }
+        };
+
+        // Current wheel
+        let AMERICAN_WHEEL = WHEELS.american.numbers;
+        let NUMBERS = Object.keys(AMERICAN_WHEEL);
+        let WHEEL_SECTIONS = NUMBERS.length;
+        let EV = { Standard: WHEELS.american.ev, FiveNumber: WHEELS.american.fiveNumberEv };
+
+        function updateRiskCards() {
+            const layout = WHEELS[currentLayout];
+
+            document.getElementById('risk-title').textContent = `Risk Management Metrics (${layout.name} Roulette)`;
+            document.getElementById('layout-pill').textContent = `${layout.name} Layout`;
+            document.getElementById('layout-description').textContent = layout.description;
+
+            document.getElementById('ev-inside').textContent = `${(layout.ev * 100).toFixed(2)}%`;
+            document.getElementById('ev-outside').textContent = `${(layout.ev * 100).toFixed(2)}%`;
+
+            const worstLabel = document.getElementById('worst-label');
+            const worstVal = document.getElementById('ev-worst');
+
+            if (currentLayout === 'american') {
+                worstLabel.textContent = 'Worst Bet: Five-Number (0, 00, 1, 2, 3)';
+                worstVal.textContent = `${(layout.fiveNumberEv * 100).toFixed(2)}%`;
+            } else {
+                worstLabel.textContent = 'Worst Bet: N/A (No 00 pocket)';
+                worstVal.textContent = 'N/A';
+            }
+
+            const note = document.getElementById('risk-note');
+            if (currentLayout === 'american') {
+                note.textContent = 'The house edge on almost all American Roulette bets is approximately 5.26%. Over many spins, you are expected to lose about 5.26 units for every 100 wagered.';
+            } else if (currentLayout === 'european') {
+                note.textContent = 'European Roulette has a single 0 pocket, lowering the house edge to about 2.70%. Over many spins, you are expected to lose about 2.70 units for every 100 wagered.';
+            } else {
+                note.textContent = 'French Roulette with La Partage reduces the house edge on even-money bets to about 1.35% by returning half the stake when 0 hits on those bets.';
+            }
+        }
+
+        function changeLayout(layout) {
+            if (gameActive) {
+                alert('Cannot change layout during active spin');
+                return;
+            }
+
+            if (betAmount > 0) {
+                if (!confirm('Changing layout will clear your current bets. Continue?')) return;
+                bankroll += betAmount;
+                betAmount = 0;
+                activeBets = [];
+                currentBetType = null;
+                currentBetValue = null;
+            }
+
+            currentLayout = layout;
+            AMERICAN_WHEEL = WHEELS[layout].numbers;
+            NUMBERS = Object.keys(AMERICAN_WHEEL);
+            WHEEL_SECTIONS = NUMBERS.length;
+            EV = { Standard: WHEELS[layout].ev, FiveNumber: WHEELS[layout].fiveNumberEv };
+
+            ['american', 'european', 'french'].forEach(l => {
+                const btn = document.getElementById('layout-' + l);
+                if (l === layout) {
+                    btn.className = 'layout-btn-active px-5 py-3 rounded-lg text-white font-semibold text-sm border-2 transition hover:scale-105';
+                } else {
+                    btn.className = 'px-5 py-3 rounded-lg bg-slate-700 text-slate-300 font-semibold text-sm border-2 border-slate-600 hover:bg-slate-600 transition hover:scale-105';
+                }
+            });
+
+            initNumberButtons();
+            updateRiskCards();
+            updateUI();
+            showMessage('Switched to ' + WHEELS[layout].name + ' Roulette. ' + WHEELS[layout].description);
+        }
+
+        function initNumberButtons() {
+            const container = document.getElementById('straight-up-buttons');
+            container.innerHTML = '';
+
+            let orderedNumbers;
+            if (currentLayout === 'american') {
+                orderedNumbers = ['0', '00', ...NUMBERS.filter(n => n !== '0' && n !== '00')];
+            } else {
+                orderedNumbers = ['0', ...NUMBERS.filter(n => n !== '0')];
+            }
+
+            orderedNumbers.forEach(num => {
+                const color = AMERICAN_WHEEL[num];
+                if (!color) return;
+
+                const btn = document.createElement('button');
+                btn.textContent = num;
+                btn.setAttribute('data-number', num);
+                btn.className = `number-bet-btn p-2 text-[0.65rem] sm:text-xs font-bold rounded-md text-white hover:opacity-85 transition duration-100 num-${color}`;
+                btn.onclick = () => placeBet('StraightUp', num);
+                container.appendChild(btn);
+            });
+        }
+
+        function updateBetHighlights() {
+            document.querySelectorAll('.number-bet-btn, .bet-button').forEach(btn => btn.classList.remove('bet-active'));
+
+            if (currentBetType === 'StraightUp' && currentBetValue != null) {
+                const activeBtn = document.querySelector(`.number-bet-btn[data-number="${currentBetValue}"]`);
+                if (activeBtn) activeBtn.classList.add('bet-active');
+            } else if (currentBetType) {
+                // Match the onclick attribute that contains placeBet('TYPE'
+                const outsideBtn = document.querySelector(`.bet-button[onclick*="placeBet('${currentBetType}'"]`);
+                if (outsideBtn) outsideBtn.classList.add('bet-active');
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('bankroll').textContent = bankroll.toFixed(2);
+            document.getElementById('current-bet-display').textContent = betAmount.toFixed(2);
+
+            const betCountEl = document.getElementById('bet-count');
+            if (activeBets.length === 0) {
+                betCountEl.textContent = '0 bets placed';
+            } else if (activeBets.length === 1) {
+                const bet = activeBets[0];
+                betCountEl.textContent = `${bet.type}${bet.value ? ' (' + bet.value + ')' : ''}`;
+            } else {
+                betCountEl.textContent = `${activeBets.length} bets placed`;
+            }
+
+            const spinButton = document.getElementById('spin-btn');
+            const allBetButtons = document.querySelectorAll('.bet-button, .number-bet-btn');
+            const betInput = document.getElementById('bet-amount');
+
+            spinButton.disabled = gameActive || betAmount <= 0;
+            betInput.disabled = gameActive;
+
+            allBetButtons.forEach(btn => {
+                const isPlacement = btn.id !== 'spin-btn' && btn.id !== 'clear-bet-btn';
+                if (isPlacement) btn.disabled = gameActive;
+            });
+
+            document.getElementById('clear-bet-btn').disabled = gameActive || betAmount === 0;
+            document.getElementById('bankroll').classList.toggle('text-rose-400', bankroll < 50);
+
+            updateBetHighlights();
+            updateSessionStats();
+        }
+
+        function updateSessionStats() {
+            document.getElementById('session-hands').textContent = sessionHands;
+
+            const sessionPL = bankroll - startingBankroll;
+            const plEl = document.getElementById('session-pl');
+            plEl.textContent = (sessionPL >= 0 ? '+$' : '-$') + Math.abs(sessionPL).toFixed(2);
+
+            if (sessionPL > 0) {
+                plEl.className = 'text-2xl font-bold ev-positive';
+                document.getElementById('session-status').textContent = '✓ Winning Session';
+            } else if (sessionPL < 0) {
+                plEl.className = 'text-2xl font-bold ev-negative';
+                document.getElementById('session-status').textContent = '✗ Losing Session';
+            } else {
+                plEl.className = 'text-2xl font-bold text-slate-300';
+                document.getElementById('session-status').textContent = 'Break Even';
+            }
+
+            const expectedEV = totalWagered * EV.Standard;
+            const expectedEVEl = document.getElementById('expected-ev');
+            expectedEVEl.textContent = '-$' + Math.abs(expectedEV).toFixed(2);
+            expectedEVEl.className = 'text-2xl font-bold ev-negative';
+
+            if (sessionHands > 0 && totalWagered > 0 && Math.abs(expectedEV) > 0) {
+                const actualResult = sessionPL;
+                const variance = actualResult - expectedEV;
+                const vsExpectedPercent = (variance / Math.abs(expectedEV)) * 100;
+
+                const vsExpectedEl = document.getElementById('vs-expected');
+                const varianceLabelEl = document.getElementById('variance-label');
+
+                if (variance > 0) {
+                    vsExpectedEl.textContent = '+' + vsExpectedPercent.toFixed(1) + '%';
+                    vsExpectedEl.className = 'text-2xl font-bold ev-positive';
+                    varianceLabelEl.textContent = 'Running Better Than Expected';
+                } else if (variance < 0) {
+                    vsExpectedEl.textContent = vsExpectedPercent.toFixed(1) + '%';
+                    vsExpectedEl.className = 'text-2xl font-bold ev-negative';
+                    varianceLabelEl.textContent = 'Running Worse Than Expected';
+                } else {
+                    vsExpectedEl.textContent = '0.0%';
+                    vsExpectedEl.className = 'text-2xl font-bold text-slate-300';
+                    varianceLabelEl.textContent = 'Exactly As Expected';
+                }
+            } else {
+                document.getElementById('vs-expected').textContent = '0.0%';
+                document.getElementById('variance-label').textContent = 'No Spins Yet';
+            }
+        }
+
+        function setBet(amount) {
+            document.getElementById('bet-amount').value = amount;
+            updateUI();
+        }
+
+        function placeBet(type, value = null) {
+            if (gameActive) {
+                showMessage('Please wait for the current spin to finish.');
+                return;
+            }
+
+            const inputAmount = parseFloat(document.getElementById('bet-amount').value);
+
+            if (isNaN(inputAmount) || inputAmount <= 0) {
+                showMessage('Enter a valid bet amount.');
+                return;
+            }
+            if (inputAmount > bankroll) {
+                showMessage('Insufficient bankroll for this bet.');
+                return;
+            }
+
+            // FIX: set last-selected bet for highlight
+            currentBetType = type;
+            currentBetValue = value;
+
+            activeBets.push({ type, value, amount: inputAmount });
+
+            betAmount += inputAmount;
+            bankroll -= inputAmount;
+
+            let message = `Added ${inputAmount.toFixed(2)} on ${type}`;
+            if (value) message += ` (${value})`;
+            message += `. Total bet: ${betAmount.toFixed(2)}`;
+
+            showMessage(message + '. Add more bets or press SPIN.');
+            updateUI();
+        }
+
+        function adjustBankroll() {
+            if (gameActive) {
+                alert('Cannot adjust bankroll during active spin');
+                return;
+            }
+
+            const newBankroll = prompt('Enter new bankroll amount:', bankroll.toFixed(2));
+            if (newBankroll !== null) {
+                const amount = parseFloat(newBankroll);
+                if (!isNaN(amount) && amount > 0) {
+                    bankroll = amount;
+                    startingBankroll = amount;
+
+                    sessionHands = 0;
+                    totalWagered = 0;
+                    totalWon = 0;
+                    spinHistory = [];
+                    sessionStartTime = Date.now();
+
+                    currentBetType = null;
+                    currentBetValue = null;
+
+                    updateUI();
+                    showMessage('Bankroll reset to $' + amount.toFixed(2));
+                } else {
+                    alert('Invalid amount');
+                }
+            }
+        }
+
+        function clearBet() {
+            if (gameActive) return;
+
+            bankroll += betAmount;
+            betAmount = 0;
+            activeBets = [];
+            currentBetType = null;
+            currentBetValue = null;
+
+            showMessage('All bets cleared. Place new bets to continue.');
+            updateUI();
+        }
+
+        async function spinWheel() {
+            if (gameActive || betAmount <= 0) return;
+
+            gameActive = true;
+            document.getElementById('spin-btn').disabled = true;
+            showMessage('Ball in motion...');
+
+            const winningIndex = Math.floor(Math.random() * WHEEL_SECTIONS);
+            const winningNumber = NUMBERS[winningIndex];
+            const winningColor = AMERICAN_WHEEL[winningNumber];
+
+            const wheel = document.getElementById('wheel-inner');
+            const rotations = 5;
+            const targetAngle = winningIndex * (360 / WHEEL_SECTIONS);
+            const finalRotation = (rotations * 360) + (360 - targetAngle) + (Math.random() * 5 - 2.5);
+
+            wheel.style.transition = 'transform 4s cubic-bezier(0.2, 0.7, 0.4, 1)';
+            wheel.style.transform = `rotate(${finalRotation}deg)`;
+            document.getElementById('result-text').textContent = '';
+
+            await new Promise(r => setTimeout(r, 4500));
+            wheel.style.transition = 'none';
+
+            document.getElementById('winning-number-display').textContent = winningNumber;
+            document.getElementById('result-text').textContent = winningNumber;
+            document.getElementById('result-text').className =
+                `winning-number ${
+                    winningColor === 'red'
+                        ? 'text-rose-400'
+                        : winningColor === 'black'
+                        ? 'text-slate-100'
+                        : 'text-emerald-400'
+                }`;
+
+            calculateWinnings(winningNumber);
+
+            gameActive = false;
+            updateUI();
+        }
+
+        function calculateWinnings(winningNumber) {
+            if (activeBets.length === 0) {
+                showMessage(`Winning number: ${winningNumber}. No bets placed.`);
+                return;
+            }
+
+            let totalWinnings = 0;
+            let totalBetAmount = betAmount;
+            let wonBets = [];
+            let lostBets = [];
+
+            const winningNum = (winningNumber === '00') ? '00' : parseInt(winningNumber, 10);
+            const winningColor = AMERICAN_WHEEL[winningNumber];
+
+            activeBets.forEach(bet => {
+                let payout = 0;
+                let won = false;
+
+                switch (bet.type) {
+                    case 'StraightUp':
+                        if (bet.value === winningNumber) { payout = bet.amount * 35; won = true; }
+                        break;
+                    case 'Red':
+                        if (winningColor === 'red') { payout = bet.amount * 1; won = true; }
+                        break;
+                    case 'Black':
+                        if (winningColor === 'black') { payout = bet.amount * 1; won = true; }
+                        break;
+                    case 'Odd':
+                        if (typeof winningNum === 'number' && winningNum % 2 === 1) { payout = bet.amount * 1; won = true; }
+                        break;
+                    case 'Even':
+                        if (typeof winningNum === 'number' && winningNum % 2 === 0) { payout = bet.amount * 1; won = true; }
+                        break;
+                    case 'FirstDoz':
+                        if (typeof winningNum === 'number' && winningNum >= 1 && winningNum <= 12) { payout = bet.amount * 2; won = true; }
+                        break;
+                    case 'SecondDoz':
+                        if (typeof winningNum === 'number' && winningNum >= 13 && winningNum <= 24) { payout = bet.amount * 2; won = true; }
+                        break;
+                    case 'ThirdDoz':
+                        if (typeof winningNum === 'number' && winningNum >= 25 && winningNum <= 36) { payout = bet.amount * 2; won = true; }
+                        break;
+                }
+
+                // French Roulette La Partage (even-money bets only, when 0 hits)
+                if (!won && currentLayout === 'french' && winningNumber === '0') {
+                    const isEvenMoneyBet = ['Red', 'Black', 'Odd', 'Even'].includes(bet.type);
+                    if (isEvenMoneyBet) {
+                        const halfBack = bet.amount * 0.5;
+                        totalWinnings += halfBack;
+                        wonBets.push({ ...bet, payout: 0, laPartage: true });
+                        return;
+                    }
+                }
+
+                if (won) {
+                    totalWinnings += bet.amount + payout;
+                    wonBets.push({ ...bet, payout });
+                } else {
+                    lostBets.push(bet);
+                }
+            });
+
+            bankroll += totalWinnings;
+            totalWon += totalWinnings;
+
+            sessionHands++;
+            totalWagered += totalBetAmount;
+
+            let resultMessage = `Winning #: ${winningNumber}. `;
+            if (wonBets.length > 0) {
+                const netProfit = totalWinnings - totalBetAmount;
+                resultMessage += `Won ${wonBets.length} bet(s). Net: ${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`;
+            } else {
+                const actualLoss = totalBetAmount - totalWinnings;
+                if (currentLayout === 'french' && winningNumber === '0' && totalWinnings > 0) {
+                    resultMessage += `La Partage: Half returned on even-money bets. Loss: -$${actualLoss.toFixed(2)}`;
+                } else {
+                    resultMessage += `Lost all ${lostBets.length} bet(s). Total loss: -$${actualLoss.toFixed(2)}`;
+                }
+            }
+
+            spinHistory.push({
+                spinNumber: sessionHands,
+                winningNumber,
+                totalBet: totalBetAmount,
+                totalWon: totalWinnings,
+                netResult: totalWinnings - totalBetAmount,
+                wonBets: wonBets.length,
+                lostBets: lostBets.length,
+                bets: activeBets.map(b => ({ ...b }))
+            });
+
+            showMessage(resultMessage);
+
+            betAmount = 0;
+            activeBets = [];
+            currentBetType = null;
+            currentBetValue = null;
+        }
+
+        function logSession() {
+            const sessionDuration = (Date.now() - sessionStartTime) / 1000 / 60;
+            const sessionPL = bankroll - startingBankroll;
+            const expectedEV = totalWagered * EV.Standard;
+            const variance = sessionPL - expectedEV;
+
+            const sessionData = {
+                timestamp: Date.now(),
+                summary: {
+                    layout: WHEELS[currentLayout].name,
+                    houseEdge: (EV.Standard * 100).toFixed(2) + '%',
+                    startingBankroll: startingBankroll,
+                    endingBankroll: bankroll,
+                    profitLoss: sessionPL,
+                    totalSpins: sessionHands,
+                    totalWagered: totalWagered,
+                    totalWon: totalWon,
+                    durationMinutes: sessionDuration.toFixed(2)
+                },
+                expectedValue: {
+                    houseEdge: (EV.Standard * 100).toFixed(2) + '%',
+                    expectedLoss: expectedEV.toFixed(2),
+                    actualResult: sessionPL.toFixed(2),
+                    variance: variance.toFixed(2),
+                    vsExpected: (expectedEV !== 0 ? ((sessionPL / expectedEV - 1) * 100).toFixed(1) + '%' : 'N/A')
+                },
+                spinHistory: spinHistory
+            };
+
+            const savedSessions = JSON.parse(localStorage.getItem('rouletteSessions') || '[]');
+            savedSessions.unshift(sessionData);
+            if (savedSessions.length > 50) savedSessions.pop();
+            localStorage.setItem('rouletteSessions', JSON.stringify(savedSessions));
+
+            alert(`✅ Session saved!\n\nLayout: ${sessionData.summary.layout}\nTotal Spins: ${sessionHands}\nP/L: $${sessionPL.toFixed(2)}\nExpected EV: $${expectedEV.toFixed(2)}`);
+        }
+
+        function viewSessionHistory() {
+            const savedSessions = JSON.parse(localStorage.getItem('rouletteSessions') || '[]');
+            const modal = document.getElementById('session-modal');
+            const listContainer = document.getElementById('session-history-list');
+
+            if (savedSessions.length === 0) {
+                listContainer.innerHTML = '<p class="text-slate-400 text-center py-8">No sessions saved yet. Complete a session and click "Save Session" to track your progress.</p>';
+            } else {
+                listContainer.innerHTML = savedSessions.map((session) => {
+                    const plColor = session.summary.profitLoss >= 0 ? 'text-green-400' : 'text-red-400';
+                    const vsExpNum = parseFloat(session.expectedValue.vsExpected);
+                    const vsExpColor = isNaN(vsExpNum) ? 'text-slate-300' : (vsExpNum >= 0 ? 'text-green-400' : 'text-red-400');
+                    const date = new Date(session.timestamp).toLocaleString();
+
+                    return `
+                        <div class="session-card">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="text-lg font-bold text-indigo-300">${session.summary.layout}</div>
+                                    <div class="text-xs text-slate-400">${date}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400">House Edge</div>
+                                    <div class="text-sm font-semibold text-slate-300">${session.summary.houseEdge}</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                    <div class="text-xs text-slate-400">Spins</div>
+                                    <div class="font-bold text-white">${session.summary.totalSpins}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-400">Total Wagered</div>
+                                    <div class="font-bold text-white">$${session.summary.totalWagered.toFixed(2)}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-400">Profit/Loss</div>
+                                    <div class="font-bold ${plColor}">$${session.summary.profitLoss.toFixed(2)}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-400">vs Expected</div>
+                                    <div class="font-bold ${vsExpColor}">${session.expectedValue.vsExpected}</div>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-3 border-t border-slate-700 grid grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <span class="text-slate-400">Expected EV:</span>
+                                    <span class="text-red-400 font-semibold">${session.expectedValue.expectedLoss}</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400">Duration:</span>
+                                    <span class="text-slate-300 font-semibold">${session.summary.durationMinutes} min</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeSessionHistory() {
+            document.getElementById('session-modal').classList.remove('active');
+        }
+
+        function clearSessionHistory() {
+            if (confirm('Are you sure you want to delete all saved sessions? This cannot be undone.')) {
+                localStorage.removeItem('rouletteSessions');
+                viewSessionHistory();
+            }
+        }
+
+        function showMessage(text) {
+            const el = document.getElementById('result-message');
+            el.className = 'text-center text-base sm:text-lg font-semibold mt-6 text-yellow-300 min-h-[28px]';
+            el.textContent = text;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initNumberButtons();
+            updateRiskCards();
+            updateUI();
+
+            const betInput = document.getElementById('bet-amount');
+            betInput.addEventListener('change', () => {
+                let val = parseFloat(betInput.value);
+                if (val <= 0 || isNaN(val)) val = 1;
+                betInput.value = val.toFixed(0);
+                updateUI();
+            });
+        });
+    </script>
+    </div>
+</body>
+</html>
